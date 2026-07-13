@@ -10,6 +10,9 @@
 
 set -euo pipefail
 
+# Auto-detect python command (macOS uses python3)
+PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "python3")
+
 API_KEY="${DEEPSEEK_API_KEY:-}"
 if [ -z "$API_KEY" ]; then
     echo "❌ Set DEEPSEEK_API_KEY environment variable"
@@ -34,7 +37,7 @@ LLM_API_KEY="$API_KEY" \
 LLM_MODEL="deepseek-chat" \
 SERVER_MODEL_NAME="deep-research" \
 PORT="$PORT" \
-    nohup python server.py > /tmp/deep-research-server.log 2>&1 &
+    nohup "$PYTHON" server.py > /tmp/deep-research-server.log 2>&1 &
 
 SERVER_PID=$!
 echo "   PID: ${SERVER_PID}"
@@ -57,12 +60,12 @@ done
 # ── Test 1: Health ────────────────────────────────────────────────────
 echo ""
 echo "━━━ Test 1: Health ━━━"
-curl -s "${BASE}/health" | python -m json.tool
+curl -s "${BASE}/health" | "$PYTHON" -m json.tool
 
 # ── Test 2: Models list ───────────────────────────────────────────────
 echo ""
 echo "━━━ Test 2: Models ━━━"
-curl -s "${BASE}/v1/models" | python -m json.tool
+curl -s "${BASE}/v1/models" | "$PYTHON" -m json.tool
 
 # ── Test 3: Non-streaming rejection ───────────────────────────────────
 echo ""
@@ -70,7 +73,7 @@ echo "━━━ Test 3: Non-streaming rejection ━━━"
 curl -s -X POST "${BASE}/v1/chat/completions" \
     -H "Content-Type: application/json" \
     -d '{"model":"deep-research","messages":[{"role":"user","content":"test"}],"stream":false}' \
-    | python -m json.tool
+    | "$PYTHON" -m json.tool
 
 # ── Test 4: Live research (streaming) ─────────────────────────────────
 echo ""
@@ -97,7 +100,7 @@ timeout 120 curl -s -N -X POST "${BASE}/v1/chat/completions" \
             continue
         fi
         # Extract reasoning or content
-        reasoning=$(echo "$data" | python -c "
+        reasoning=$(echo "$data" | "$PYTHON" -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
