@@ -90,29 +90,7 @@ curl -s -N --max-time 120 -X POST "${BASE}/v1/chat/completions" \
             {"role": "user", "content": "What are the latest breakthroughs in quantum computing as of 2025-2026?"}
         ],
         "stream": true
-    }' | while IFS= read -r line; do
-    if [[ "$line" == data:* ]]; then
-        data="${line#data: }"
-        if [ "$data" = "[DONE]" ]; then
-            echo ""
-            echo "   ─────────────────────────────────────────────────"
-            echo "   ✅ Research complete"
-            continue
-        fi
-        # Extract reasoning or content
-        reasoning=$(echo "$data" | "$PYTHON" -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    delta = d['choices'][0].get('delta', {})
-    rc = delta.get('reasoning_content', '')
-    c = delta.get('content', '')
-    if rc: print(f'🧠 {rc}', end='')
-    if c: print(c, end='')
-except: pass
-" 2>/dev/null || true)
-    fi
-done
+    }' | "$PYTHON" parse_sse.py
 
 echo ""
 
