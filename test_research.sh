@@ -82,7 +82,7 @@ echo "   Question: What are the latest breakthroughs in quantum computing?"
 echo "   ─────────────────────────────────────────────────"
 echo ""
 
-timeout 120 curl -s -N -X POST "${BASE}/v1/chat/completions" \
+curl -s -N --max-time 120 -X POST "${BASE}/v1/chat/completions" \
     -H "Content-Type: application/json" \
     -d '{
         "model": "deep-research",
